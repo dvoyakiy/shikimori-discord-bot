@@ -1,4 +1,6 @@
 {
   "token": "",
-  "prefix": "!shiki "
+  "prefix": "!shiki ",
+  "ShikimoriClientId": "",
+  "ShikimoriClientSecret": ""
 }

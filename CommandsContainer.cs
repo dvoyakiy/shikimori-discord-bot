@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ShikimoriDiscordBot.Commands {
-    public class Commands {
+    public class CommandsContainer {
         [Command("hi")]
         public async Task Hi(CommandContext ctx) {
             await ctx.RespondAsync($"Hi, {ctx.User.Mention}");

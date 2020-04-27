@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using ShikimoriDiscordBot.Config;
+using ShikimoriDiscordBot.Commands;
 
 namespace ShikimoriDiscordBot {
     static class Bot {
@@ -20,7 +21,7 @@ namespace ShikimoriDiscordBot {
                 StringPrefix = BotConfig.Prefix
             });
 
-            commands.RegisterCommands<ShikimoriDiscordBot.Commands.Commands>();
+            commands.RegisterCommands<CommandsContainer>();
 
             await discord.ConnectAsync();
             await Task.Delay(-1);

@@ -15,7 +15,7 @@ namespace ShikimoriDiscordBot {
         static InteractivityModule interactivity;
 
         static public async Task RunAsync(string[] args) {
-            discord = new DiscordClient(BotConfig.GetDiscordConfiguration("config.json"));
+            discord = new DiscordClient(BotConfig.GetDiscordConfiguration("config.dev.json"));
             interactivity = discord.UseInteractivity(new InteractivityConfiguration());
             commands = discord.UseCommandsNext(new CommandsNextConfiguration {
                 StringPrefix = BotConfig.Prefix

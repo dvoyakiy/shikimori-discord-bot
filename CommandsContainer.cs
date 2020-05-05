@@ -21,11 +21,8 @@ namespace ShikimoriDiscordBot.Commands {
         public async Task Hi(CommandContext ctx, string title) {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
-            if (user == null) {
+            if (user == null)
                 await ctx.RespondAsync("Please authorize!");
-                var dm = await ctx.Member.CreateDmChannelAsync();
-                await dm.SendMessageAsync(BotConfig.AuthURL);
-            }
         }
 
         [Command("auth")]

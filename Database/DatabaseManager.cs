@@ -20,10 +20,11 @@ namespace ShikimoriDiscordBot.Database {
             await db.CreateTableAsync<User>();
         }
 
-        public async Task InsertUser(string nickname, string clientId, string accessToken, string refreshToken) {
+        public async Task InsertUser(string nickname, string clientId, long shikimoriUserId, string accessToken, string refreshToken) {
             await db.InsertAsync(new User() {
                 Nickname = nickname,
                 ClientId = clientId,
+                ShikimoriUserId = shikimoriUserId,
                 AccessToken = accessToken,
                 RefreshToken = refreshToken
             });

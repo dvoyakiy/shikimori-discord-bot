@@ -14,8 +14,15 @@ using Newtonsoft.Json;
 
 namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
-        private DatabaseManager db = new DatabaseManager();
-        private readonly HttpClient http = new HttpClient();
+        private DatabaseManager db;
+        private readonly HttpClient http;
+
+        public CommandsContainer() {
+            db = new DatabaseManager();
+            db.Init().GetAwaiter().GetResult();
+
+            http = new HttpClient();
+        }
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string title) {
@@ -61,11 +68,11 @@ namespace ShikimoriDiscordBot.Commands {
 
             } while (response.status == System.Net.HttpStatusCode.BadRequest);
 
-            
 
             await db.InsertUser(
                 nickname: ctx.Message.Author.Username,
                 clientId: ctx.User.Id.ToString(),
+                shikimoriUserId: response.userId,
                 accessToken: response.accessToken,
                 refreshToken: response.refreshToken
             );

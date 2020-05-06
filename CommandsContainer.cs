@@ -18,12 +18,14 @@ namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
         private DatabaseManager db;
         private readonly HttpClient http;
+        private readonly ApiClient api;
 
         public CommandsContainer() {
             db = new DatabaseManager();
             db.Init().GetAwaiter().GetResult();
 
             http = new HttpClient();
+            api = new ApiClient();
         }
 
         private async Task CheckAuth(CommandContext ctx) {
@@ -40,11 +42,16 @@ namespace ShikimoriDiscordBot.Commands {
             return $"https://shikimori.org/api/{type}s?search=\"{title}\"";
         }
 
+        private async Task UpdateTokens(string clientId, string refreshToken) {
+            var res = await api.RefreshCurrentToken(refreshToken);
+            await db.Execute($"update User set AccessToken={res.access_token}, RefreshToken={res.refresh_token} where ClientId={clientId}");
+        }
+
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
             await CheckAuth(ctx);
 
-            Console.WriteLine(GetApiUrl(type, title));
+
 
         }
 

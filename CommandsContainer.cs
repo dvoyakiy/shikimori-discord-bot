@@ -12,6 +12,7 @@ using ShikimoriDiscordBot.Authorization;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Globalization;
+using ShikimoriDiscordBot;
 
 namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
@@ -32,10 +33,19 @@ namespace ShikimoriDiscordBot.Commands {
                 await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");    
         }
 
+        private string GetApiUrl(string type, string title) {
+            if ((type == "characters") || (type == "people"))
+                return $"https://shikimori.org/api/{type}/search?search=\"{title}\"";
+            
+            return $"https://shikimori.org/api/{type}s?search=\"{title}\"";
+        }
+
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
             await CheckAuth(ctx);
-                
+
+            Console.WriteLine(GetApiUrl(type, title));
+
         }
 
         [Command("auth")]

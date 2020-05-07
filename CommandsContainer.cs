@@ -38,11 +38,8 @@ namespace ShikimoriDiscordBot.Commands {
             return user;
         }
 
-        
-
         private async Task UpdateTokens(string clientId, string refreshToken) {
             var res = await api.RefreshCurrentToken(refreshToken);
-            Console.WriteLine(res.access_token);
             await db.Execute($"update User set AccessToken={res.access_token}, RefreshToken={res.refresh_token} where ClientId={clientId}");
         }
 

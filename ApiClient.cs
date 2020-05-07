@@ -90,8 +90,6 @@ namespace ShikimoriDiscordBot {
                     { "refresh_token", refreshToken }
                  });
             var responseString = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(responseString);
-
             var jsonResponse = JsonConvert.DeserializeObject<Tokens>(responseString);
 
             return jsonResponse;

@@ -7,52 +7,59 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using ShikimoriDiscordBot.Database;
+using ShikimoriDiscordBot.Database.Models;
 using ShikimoriDiscordBot.Config;
 using ShikimoriDiscordBot.Authorization;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Globalization;
 using ShikimoriDiscordBot;
+using DSharpPlus.EventArgs;
+using ShikimoriDiscordBot.Json;
 
 namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
         private DatabaseManager db;
-        private readonly HttpClient http;
         private readonly ApiClient api;
 
         public CommandsContainer() {
             db = new DatabaseManager();
             db.Init().GetAwaiter().GetResult();
 
-            http = new HttpClient();
             api = new ApiClient();
         }
 
-        private async Task CheckAuth(CommandContext ctx) {
-            var user = await db.GetUser(ctx.User.Id.ToString());
+        private async Task<User> CheckAuth(CommandContext ctx) {
+            User user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null)
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");    
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+
+            return user;
         }
 
-        private string GetApiUrl(string type, string title) {
-            if ((type == "characters") || (type == "people"))
-                return $"https://shikimori.org/api/{type}/search?search=\"{title}\"";
-            
-            return $"https://shikimori.org/api/{type}s?search=\"{title}\"";
-        }
+        
 
         private async Task UpdateTokens(string clientId, string refreshToken) {
             var res = await api.RefreshCurrentToken(refreshToken);
+            Console.WriteLine(res.access_token);
             await db.Execute($"update User set AccessToken={res.access_token}, RefreshToken={res.refresh_token} where ClientId={clientId}");
         }
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
-            await CheckAuth(ctx);
+            var user = await CheckAuth(ctx);
+            if (user == null)
+                return;
 
+            var response = await api.SearchTitle(type, title, user.AccessToken);
 
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+                await UpdateTokens(user.ClientId, user.RefreshToken);
+                response = await api.SearchTitle(type, title, user.AccessToken);
+            }
 
+            await ctx.RespondAsync(response.Content.description);
         }
 
         [Command("auth")]

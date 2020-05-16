@@ -7,6 +7,7 @@ using SQLitePCL;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
+using System;
 
 namespace ShikimoriDiscordBot.Database {
     class DatabaseManager {
@@ -39,7 +40,7 @@ namespace ShikimoriDiscordBot.Database {
         }
 
         public async Task Execute(string query) {
-            await db.ExecuteAsync(query, null);
+            await db.ExecuteAsync(query);
         }
     }
 }

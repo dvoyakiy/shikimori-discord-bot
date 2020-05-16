@@ -81,14 +81,13 @@ namespace ShikimoriDiscordBot {
         }
 
         public async Task<Tokens> RefreshCurrentToken(string refreshToken) {
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "ShikimoriDiscordBot");
-
             var response = await Post("https://shikimori.org/oauth/token", new Dictionary<string, string> {
                     { "grant_type", "refresh_token" },
                     { "client_id", BotConfig.ShikimoriClientId },
                     { "client_secret", BotConfig.ShikimoriClientSecret },
                     { "refresh_token", refreshToken }
                  });
+
             var responseString = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonConvert.DeserializeObject<Tokens>(responseString);
 
@@ -96,8 +95,11 @@ namespace ShikimoriDiscordBot {
         }
 
         public async Task<HttpResponseMessage> Post(string url, Dictionary<string, string> body) {
+            var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("User-Agent", "ShikimoriDiscordBot");
+
             var content = new FormUrlEncodedContent(body);
-            var response = await httpClient.PostAsync(url, content);
+            var response = await http.PostAsync(url, content);
 
             return response;
         }

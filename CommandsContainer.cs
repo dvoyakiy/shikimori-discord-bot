@@ -29,30 +29,27 @@ namespace ShikimoriDiscordBot.Commands {
             api = new ApiClient();
         }
 
-        private async Task<User> CheckAuth(CommandContext ctx) {
-            User user = await db.GetUser(ctx.User.Id.ToString());
-
-            if (user == null)
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
-
-            return user;
-        }
-
         private async Task UpdateTokens(string clientId, string refreshToken) {
             var res = await api.RefreshCurrentToken(refreshToken);
-            await db.Execute($"update User set AccessToken={res.access_token}, RefreshToken={res.refresh_token} where ClientId={clientId}");
+            await db.Execute($"update User set AccessToken=\"{res.access_token}\", RefreshToken=\"{res.refresh_token}\" where ClientId={clientId}");
         }
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
-            var user = await CheckAuth(ctx);
-            if (user == null)
+            var user = await db.GetUser(ctx.User.Id.ToString());
+
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
                 return;
+            }
+                
 
             var response = await api.SearchTitle(type, title, user.AccessToken);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
                 await UpdateTokens(user.ClientId, user.RefreshToken);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
                 response = await api.SearchTitle(type, title, user.AccessToken);
             }
 

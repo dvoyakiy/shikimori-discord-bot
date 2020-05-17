@@ -8,18 +8,24 @@ namespace ShikimoriDiscordBot.Json {
     public class Image {
         [JsonProperty]
         public string original { get; set; }
-        [JsonProperty]
-        public string preview { get; set; }
+        //[JsonProperty]
+        //public string preview { get; set; }
         //public string x96 { get; set; }
         //public string x48 { get; set; }
+    }
+
+    public class Studio {
+        [JsonProperty]
+        public string name { get; set; }
     }
 
     [JsonObject(MemberSerialization.OptIn)]
     public class Genre {
         //public int id { get; set; }
+        //[JsonProperty]
+        //public string name { get; set; }
         [JsonProperty]
-        public string name { get; set; }
-        //public string russian { get; set; }
+        public string russian { get; set; }
         //public string kind { get; set; }
     }
 
@@ -42,6 +48,10 @@ namespace ShikimoriDiscordBot.Json {
         [JsonProperty]
         public string kind { get; set; }
         [JsonProperty]
+        private IList<Studio> studios { get; set; }
+        [JsonProperty]
+        private IList<Studio> publishers { get; set; }
+        [JsonProperty]
         public string score { get; set; }
         [JsonProperty]
         public string status { get; set; }
@@ -63,5 +73,16 @@ namespace ShikimoriDiscordBot.Json {
         public string description { get; set; }
         [JsonProperty]
         public IList<Genre> genres { get; set; }
+
+        public IList<Studio> studioOrPublisher {
+            get {
+                if (publishers != null && publishers.Count > 0)
+                    return publishers;
+                else if (studios != null && studios.Count > 0)
+                    return studios;
+                else
+                    return null;
+            }
+        }
     }
 }

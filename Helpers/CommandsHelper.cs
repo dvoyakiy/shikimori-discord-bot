@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using ShikimoriDiscordBot.Json;
+using System.Linq;
 
 namespace ShikimoriDiscordBot.Helpers {
     static class CommandsHelper {
@@ -32,6 +33,17 @@ namespace ShikimoriDiscordBot.Helpers {
             var api = new ApiClient();
             var res = await api.RefreshCurrentToken(refreshToken);
             await db.Execute($"update User set AccessToken=\"{res.access_token}\", RefreshToken=\"{res.refresh_token}\" where ClientId={clientId}");
+        }
+
+        public static string GetGenres(IList<Genre> genresList) {
+            var genres = from genre in genresList select genre.russian;
+            return string.Join(", ", genres);
+        }
+
+        public static string GetStudios(IList<Studio> studiosList) {
+            var studios = from studio in studiosList select studio.name;
+            Console.WriteLine(studios.Count());
+            return string.Join(", ", studios);
         }
 
         public static string GetUrlTo(string part) {
@@ -68,6 +80,10 @@ namespace ShikimoriDiscordBot.Helpers {
             }
 
             embed.AddField("Оценка:", titleInfo.score);
+            embed.AddField("Жанры:", GetGenres(titleInfo.genres));
+
+            if (titleInfo.studioOrPublisher != null)
+                embed.AddField(type == "anime" ? "Студия:" : "Издатель:", GetStudios(titleInfo.studioOrPublisher));
 
             return embed;
         }

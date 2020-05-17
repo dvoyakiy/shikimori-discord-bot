@@ -40,6 +40,28 @@ namespace ShikimoriDiscordBot.Helpers {
             return string.Join(", ", genres);
         }
 
+        public static string GetUserStatus(UserRate userRate) {
+            if (userRate == null)
+                return "N/a";
+
+            switch(userRate.status) {
+                case "planned":
+                    return "Запланировано";
+                case "watching":
+                    return "Смотрю";
+                case "rewatching":
+                    return "Пересматриваю";
+                case "completed":
+                    return "Просмотрено";
+                case "on_hold":
+                    return "Отложено";
+                case "dropped":
+                    return "Брошено";
+                default:
+                    return "N/a";
+            }
+        }
+
         public static string GetStudios(IList<Studio> studiosList) {
             var studios = from studio in studiosList select studio.name;
             Console.WriteLine(studios.Count());
@@ -84,6 +106,8 @@ namespace ShikimoriDiscordBot.Helpers {
 
             if (titleInfo.studioOrPublisher != null)
                 embed.AddField(type == "anime" ? "Студия:" : "Издатель:", GetStudios(titleInfo.studioOrPublisher));
+
+            embed.AddField("В списке:", GetUserStatus(titleInfo.user_rate));
 
             return embed;
         }

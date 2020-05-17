@@ -19,6 +19,12 @@ namespace ShikimoriDiscordBot.Json {
         public string name { get; set; }
     }
 
+    public class UserRate {
+        [JsonProperty]
+        public string status { get; set; }
+        public int episodes { get; set; }
+    }
+
     [JsonObject(MemberSerialization.OptIn)]
     public class Genre {
         //public int id { get; set; }
@@ -71,6 +77,8 @@ namespace ShikimoriDiscordBot.Json {
         public int duration { get; set; }
         [JsonProperty]
         public string description { get; set; }
+        [JsonProperty]
+        public UserRate user_rate { get; set; }
         [JsonProperty]
         public IList<Genre> genres { get; set; }
 

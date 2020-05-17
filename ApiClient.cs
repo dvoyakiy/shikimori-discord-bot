@@ -56,8 +56,11 @@ namespace ShikimoriDiscordBot {
 
         private async Task<SearchResponse> SearchById(string url, string id) {
             var response = await Get($"{url}/{id}");
+
             string responseString = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonConvert.DeserializeObject<TitleInfo>(responseString);
+
+            Console.WriteLine(jsonResponse.name);
 
             return new SearchResponse() {
                 Content = jsonResponse,
@@ -105,6 +108,7 @@ namespace ShikimoriDiscordBot {
         }
 
         public async Task<HttpResponseMessage> Get(string url) {
+            Console.WriteLine(url);
             var response = await httpClient.GetAsync(url);
 
             return response;
@@ -121,6 +125,8 @@ namespace ShikimoriDiscordBot {
 
             builder.Query = query.ToString();
             string requestUrl = builder.ToString();
+
+            Console.WriteLine(requestUrl);
             
             var response = await httpClient.GetAsync(requestUrl);
 

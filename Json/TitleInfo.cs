@@ -6,7 +6,8 @@ using System.Text;
 namespace ShikimoriDiscordBot.Json {
     [JsonObject(MemberSerialization.OptIn)]
     public class Image {
-        //public string original { get; set; }
+        [JsonProperty]
+        public string original { get; set; }
         [JsonProperty]
         public string preview { get; set; }
         //public string x96 { get; set; }
@@ -46,6 +47,16 @@ namespace ShikimoriDiscordBot.Json {
         public string status { get; set; }
         [JsonProperty]
         public int episodes { get; set; }
+        [JsonProperty]
+        public int episodes_aired { get; set; }
+        [JsonProperty]
+        public bool ongoing { get; set; }
+        [JsonProperty]
+        public string aired_on { get; set; }
+        [JsonProperty]
+        public string released_on { get; set; }
+        [JsonProperty]
+        public string next_episode_at { get; set; }
         [JsonProperty]
         public int duration { get; set; }
         [JsonProperty]

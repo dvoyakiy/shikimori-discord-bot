@@ -1,0 +1,75 @@
+﻿using ShikimoriDiscordBot.Database;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using ShikimoriDiscordBot.Json;
+
+namespace ShikimoriDiscordBot.Helpers {
+    static class CommandsHelper {
+        public static string BuildTitleName(string russian, string romaji, IList<string> japanese) {
+            if (japanese[0] == null)
+                return $"{russian} ({romaji})";
+
+            return $"{russian} ({romaji} / { string.Join(" / ", japanese) })";
+        }
+
+        public static string GetStatus(string rawStatus) {
+            switch (rawStatus) {
+                case "anons":
+                    return "Анонс";
+                case "released":
+                    return "Заверешен";
+                case "ongoing":
+                    return "Онгоинг";
+                default:
+                    return "Неизвестно";
+            }
+        }
+
+        public static async Task UpdateTokens(string clientId, string refreshToken) {
+            var db = new DatabaseManager();
+            var api = new ApiClient();
+
+            var res = await api.RefreshCurrentToken(refreshToken);
+            await db.Execute($"update User set AccessToken=\"{res.access_token}\", RefreshToken=\"{res.refresh_token}\" where ClientId={clientId}");
+        }
+
+        public static string GetUrlTo(string part) {
+            return "https://shikimori.org" + part;
+        }
+
+        public static DiscordEmbedBuilder BuildEmbed(TitleInfo titleInfo) {
+            var embed = new DiscordEmbedBuilder {
+                Title = BuildTitleName(titleInfo.russian, titleInfo.name, titleInfo.japanese),
+                ImageUrl = GetUrlTo(titleInfo.image.original),
+                Description = titleInfo.description,
+                Url = GetUrlTo(titleInfo.url),
+            };
+
+
+            if (titleInfo.ongoing) {
+                string nextEpisodeDate = DateTime.Parse(titleInfo.next_episode_at).ToString();
+
+                embed.AddField("Статус:", $"{GetStatus(titleInfo.status)}, с {titleInfo.aired_on}", true);
+                embed.AddField("Следующая серия:", nextEpisodeDate.Substring(0, nextEpisodeDate.Length - 3), true);
+            } else if (titleInfo.released_on != null) {
+                embed.AddField("Статус:", $"{GetStatus(titleInfo.status)}, с {titleInfo.aired_on} по {titleInfo.released_on}", true);
+            } else {
+                embed.AddField("Статус:", $"{GetStatus(titleInfo.status)}, {titleInfo.aired_on}", true);
+            }
+
+            embed.AddField("Тип:", titleInfo.kind.ToUpper(), true);
+            
+            embed.AddField("Эпизоды (вышло / всего):", $"{titleInfo.episodes_aired}/{titleInfo.episodes}", true);
+            embed.AddField("Длительность эпизода:", titleInfo.duration.ToString(), true);
+
+            
+
+            embed.AddField("Оценка:", titleInfo.score);
+
+            return embed;
+        }
+    }
+}

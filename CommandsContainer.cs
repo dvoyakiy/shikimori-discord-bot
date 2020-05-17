@@ -10,6 +10,7 @@ using ShikimoriDiscordBot.Database;
 using ShikimoriDiscordBot.Database.Models;
 using ShikimoriDiscordBot.Config;
 using ShikimoriDiscordBot.Authorization;
+using ShikimoriDiscordBot.Helpers;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Globalization;
@@ -19,7 +20,7 @@ using ShikimoriDiscordBot.Json;
 
 namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
-        private DatabaseManager db;
+        private readonly DatabaseManager db;
         private readonly ApiClient api;
 
         public CommandsContainer() {
@@ -27,11 +28,6 @@ namespace ShikimoriDiscordBot.Commands {
             db.Init().GetAwaiter().GetResult();
 
             api = new ApiClient();
-        }
-
-        private async Task UpdateTokens(string clientId, string refreshToken) {
-            var res = await api.RefreshCurrentToken(refreshToken);
-            await db.Execute($"update User set AccessToken=\"{res.access_token}\", RefreshToken=\"{res.refresh_token}\" where ClientId={clientId}");
         }
 
         [Command("search")]
@@ -42,18 +38,20 @@ namespace ShikimoriDiscordBot.Commands {
                 await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
                 return;
             }
-                
 
             var response = await api.SearchTitle(type, title, user.AccessToken);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
-                await UpdateTokens(user.ClientId, user.RefreshToken);
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
                 response = await api.SearchTitle(type, title, user.AccessToken);
             }
 
-            await ctx.RespondAsync(response.Content.description);
+            var titleInfo = response.Content;
+            var embed = CommandsHelper.BuildEmbed(titleInfo);
+    
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("auth")]

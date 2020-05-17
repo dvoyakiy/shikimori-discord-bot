@@ -42,14 +42,14 @@ namespace ShikimoriDiscordBot.Commands {
             var response = await api.SearchTitle(type, title, user.AccessToken);
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
-                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken);
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
                 response = await api.SearchTitle(type, title, user.AccessToken);
             }
 
             var titleInfo = response.Content;
-            var embed = CommandsHelper.BuildEmbed(titleInfo);
+            var embed = CommandsHelper.BuildEmbed(titleInfo, type);
     
             await ctx.RespondAsync(embed: embed);
         }

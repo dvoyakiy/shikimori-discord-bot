@@ -13,6 +13,7 @@ namespace ShikimoriDiscordBot.Config {
         public static string AuthURL { get; set; }
         public static string ShikimoriClientSecret { get; set; }
         public static string ShikimoriClientId { get; set; }
+        public static int SearchLimit { get; set; }
 
         public static string GreetMessage = $"Привіт!\n" +
             $"Я допоможу тобі пройти авторизацію, щоб ти зміг користуватись ботом.\n\n" +
@@ -25,6 +26,7 @@ namespace ShikimoriDiscordBot.Config {
             public string prefix { get; set; }
             public string ShikimoriClientId { get; set; }
             public string ShikimoriClientSecret { get; set; }
+            public int search_limit { get; set; }
         }
 
         public static DiscordConfiguration GetDiscordConfiguration(string configFile) {
@@ -39,6 +41,7 @@ namespace ShikimoriDiscordBot.Config {
             Prefix = cfg.prefix;
             ShikimoriClientSecret = cfg.ShikimoriClientSecret;
             ShikimoriClientId = cfg.ShikimoriClientId;
+            SearchLimit = cfg.search_limit;
             AuthURL = $"https://shikimori.org/oauth/authorize?client_id={cfg.ShikimoriClientId}&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&scope=user_rates";
 
             return new DiscordConfiguration

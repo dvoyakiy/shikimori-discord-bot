@@ -7,29 +7,78 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using ShikimoriDiscordBot.Database;
+using ShikimoriDiscordBot.Database.Models;
 using ShikimoriDiscordBot.Config;
 using ShikimoriDiscordBot.Authorization;
+using ShikimoriDiscordBot.Helpers;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Globalization;
+using ShikimoriDiscordBot;
+using DSharpPlus.EventArgs;
+using ShikimoriDiscordBot.Json;
 
 namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
-        private DatabaseManager db;
-        private readonly HttpClient http;
+        private readonly DatabaseManager db;
+        private readonly ApiClient api;
 
         public CommandsContainer() {
             db = new DatabaseManager();
             db.Init().GetAwaiter().GetResult();
 
-            http = new HttpClient();
+            api = new ApiClient();
         }
 
         [Command("search")]
-        public async Task Hi(CommandContext ctx, string title) {
+        public async Task Hi(CommandContext ctx, string type, string title) {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
-            if (user == null)
-                await ctx.RespondAsync("Please authorize!");
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                return;
+            }
+
+            var found = await api.SearchByQuery(type, title, user.AccessToken);
+
+            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
+                found = await api.SearchByQuery(type, title, user.AccessToken);
+            }
+
+            Dictionary<int, TitleInfo> mappedTitles = new Dictionary<int, TitleInfo>();
+
+            for (int idx = 0; idx < found.Content.Count; idx++)
+                mappedTitles.Add(idx + 1, found.Content[idx]);
+
+            var resultsEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
+            await ctx.RespondAsync(embed: resultsEmbed);
+
+            var interactivity = ctx.Client.GetInteractivityModule();
+            int titleIndex;
+
+            do {
+                var choice = await interactivity.WaitForMessageAsync(m => m.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+
+                if (choice == null) {
+                    await ctx.RespondAsync("Я устал ждать... Увидимся позже.");
+                    return;
+                }
+
+                titleIndex = Convert.ToInt32(choice.Message.Content);
+
+                if (titleIndex < 1 || titleIndex > BotConfig.SearchLimit)
+                    continue;
+
+            } while (titleIndex < 1 || titleIndex > BotConfig.SearchLimit);
+
+
+            var response = await api.SearchById(type, mappedTitles[titleIndex].id);
+            var embed = CommandsHelper.BuildTitleEmbed(response.Content, type);
+
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("auth")]

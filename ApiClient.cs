@@ -10,10 +10,11 @@ using System.Web;
 using ShikimoriDiscordBot.Json;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
+using System.Linq;
 
 namespace ShikimoriDiscordBot {
-    class SearchResponse {
-        public TitleInfo Content { get; set; }
+    class SearchResponse<T> {
+        public T Content { get; set; }
         public HttpStatusCode StatusCode { get; set; }
     }
 
@@ -35,51 +36,56 @@ namespace ShikimoriDiscordBot {
             return $"https://shikimori.org/api/{type}s";
         }
 
-        private async Task<SearchResponse> SearchByQuery(string url, string query) {
+        public async Task<SearchResponse<List<TitleInfo>>> SearchByQuery(string type, string title, string accessToken) {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var url = GetApiUrl(type);
+
             var response = await Get(url, new Dictionary<string, string> {
-                {"search", query }
+                {"search", title },
+                {"limit", BotConfig.SearchLimit.ToString() }
             });
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
-                return new SearchResponse() { 
+                return new SearchResponse<List<TitleInfo>>() { 
                     StatusCode = response.StatusCode
                 };
 
             string responseString = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonConvert.DeserializeObject<TitleInfo[]>(responseString);
 
-            return new SearchResponse() { 
-                Content = jsonResponse[0],
+            return new SearchResponse<List<TitleInfo>>() { 
+                Content = jsonResponse.ToList(),
                 StatusCode = response.StatusCode
             };
         }
 
-        private async Task<SearchResponse> SearchById(string url, string id) {
+        public async Task<SearchResponse<TitleInfo>> SearchById(string type, int id) {
+            var url = GetApiUrl(type);
             var response = await Get($"{url}/{id}");
 
             string responseString = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonConvert.DeserializeObject<TitleInfo>(responseString);
 
-            return new SearchResponse() {
+            return new SearchResponse<TitleInfo>() {
                 Content = jsonResponse,
                 StatusCode = response.StatusCode
             };
         }
 
-        public async Task<SearchResponse> SearchTitle(string type, string title, string accessToken) {
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        //public async Task<SearchResponse<List<TitleInfo>>> SearchTitle(string type, string title, string accessToken) {
+        //    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var url = GetApiUrl(type);
-            SearchResponse searchResponse = await SearchByQuery(url, title);
+        //    var url = GetApiUrl(type);
+        //    SearchResponse<List<TitleInfo>> searchResponse = await SearchByQuery(url, title);
 
-            if (searchResponse.StatusCode == HttpStatusCode.Unauthorized) {
-                return searchResponse;
-            }
+        //    if (searchResponse.StatusCode == HttpStatusCode.Unauthorized) {
+        //        return searchResponse;
+        //    }
 
-            searchResponse = await SearchById(url, searchResponse.Content.id.ToString());
+        //    searchResponse = await SearchById(url, searchResponse.Content.id.ToString());
 
-            return searchResponse;
-        }
+        //    return searchResponse;
+        //}
 
         public async Task<Tokens> RefreshCurrentToken(string refreshToken) {
             var response = await Post("https://shikimori.org/oauth/token", new Dictionary<string, string> {

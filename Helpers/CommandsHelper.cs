@@ -10,7 +10,7 @@ using System.Linq;
 namespace ShikimoriDiscordBot.Helpers {
     static class CommandsHelper {
         public static string BuildTitleName(string russian, string romaji, IList<string> japanese) {
-            if (japanese[0] == null)
+            if (japanese == null || japanese[0] == null)
                 return $"{russian} ({romaji})";
 
             return $"{russian} ({romaji} / { string.Join(" / ", japanese) })";
@@ -72,7 +72,18 @@ namespace ShikimoriDiscordBot.Helpers {
             return "https://shikimori.org" + part;
         }
 
-        public static DiscordEmbedBuilder BuildEmbed(TitleInfo titleInfo, string type) {
+        public static DiscordEmbedBuilder BuildTitleListEmbed(Dictionary<int, TitleInfo> mappedTitles) {
+            var embed = new DiscordEmbedBuilder {
+                Title = "Результаты поиска:"
+            };
+
+            foreach (KeyValuePair<int, TitleInfo> entry in mappedTitles)
+                embed.AddField($"`{entry.Key}.`", BuildTitleName(entry.Value.russian, entry.Value.name, null));
+
+            return embed;
+        }
+
+        public static DiscordEmbedBuilder BuildTitleEmbed(TitleInfo titleInfo, string type) {
             var embed = new DiscordEmbedBuilder {
                 Title = BuildTitleName(titleInfo.russian, titleInfo.name, titleInfo.japanese),
                 ImageUrl = GetUrlTo(titleInfo.image.original),

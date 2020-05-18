@@ -39,18 +39,45 @@ namespace ShikimoriDiscordBot.Commands {
                 return;
             }
 
-            var response = await api.SearchTitle(type, title, user.AccessToken);
+            var found = await api.SearchByQuery(type, title, user.AccessToken);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
-                response = await api.SearchTitle(type, title, user.AccessToken);
+                found = await api.SearchByQuery(type, title, user.AccessToken);
             }
 
-            var titleInfo = response.Content;
-            var embed = CommandsHelper.BuildEmbed(titleInfo, type);
-    
+            Dictionary<int, TitleInfo> mappedTitles = new Dictionary<int, TitleInfo>();
+
+            for (int idx = 0; idx < found.Content.Count; idx++)
+                mappedTitles.Add(idx + 1, found.Content[idx]);
+
+            var resultsEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
+            await ctx.RespondAsync(embed: resultsEmbed);
+
+            var interactivity = ctx.Client.GetInteractivityModule();
+            int titleIndex;
+
+            do {
+                var choice = await interactivity.WaitForMessageAsync(m => m.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
+
+                if (choice == null) {
+                    await ctx.RespondAsync("Я устал ждать... Увидимся позже.");
+                    return;
+                }
+
+                titleIndex = Convert.ToInt32(choice.Message.Content);
+
+                if (titleIndex < 1 || titleIndex > BotConfig.SearchLimit)
+                    continue;
+
+            } while (titleIndex < 1 || titleIndex > BotConfig.SearchLimit);
+
+
+            var response = await api.SearchById(type, mappedTitles[titleIndex].id);
+            var embed = CommandsHelper.BuildTitleEmbed(response.Content, type);
+
             await ctx.RespondAsync(embed: embed);
         }
 

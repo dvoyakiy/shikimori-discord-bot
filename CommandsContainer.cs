@@ -22,6 +22,7 @@ namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
         private readonly DatabaseManager db;
         private readonly ApiClient api;
+        private readonly List<string> searchTypes = new List<string>() { "anime", "manga", "ranobe" };
 
         public CommandsContainer() {
             db = new DatabaseManager();
@@ -32,6 +33,11 @@ namespace ShikimoriDiscordBot.Commands {
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
+            if (!searchTypes.Contains(type)) {
+                await ctx.RespondAsync("Неизвестный тип контента.\nОтправьте `!shiki help` чтобы посмотреть список комманд.");
+                return;
+            }
+
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null) {

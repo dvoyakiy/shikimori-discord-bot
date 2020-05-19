@@ -1,21 +1,14 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using ShikimoriDiscordBot.Database;
-using ShikimoriDiscordBot.Database.Models;
 using ShikimoriDiscordBot.Config;
 using ShikimoriDiscordBot.Authorization;
 using ShikimoriDiscordBot.Helpers;
-using System.Net.Http;
-using Newtonsoft.Json;
-using System.Globalization;
-using ShikimoriDiscordBot;
-using DSharpPlus.EventArgs;
+using System.Net;
 using ShikimoriDiscordBot.Json;
 
 namespace ShikimoriDiscordBot.Commands {
@@ -40,13 +33,13 @@ namespace ShikimoriDiscordBot.Commands {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null) {
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
                 return;
             }
 
             var found = await api.SearchTitleByQuery(type, title, user.AccessToken);
 
-            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
@@ -105,7 +98,7 @@ namespace ShikimoriDiscordBot.Commands {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user != null) {
-                await ctx.RespondAsync($"Друже {ctx.Message.Author.Mention}, ти вже авторизований :3");
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}, ты уже авторизован :3");
                 return;
             }
 
@@ -122,16 +115,16 @@ namespace ShikimoriDiscordBot.Commands {
                 }, TimeSpan.FromMinutes(5));
 
                 if (msg == null) {
-                    await dm.SendMessageAsync("Я втомився чекати... Побачимось пізніше.");
+                    await dm.SendMessageAsync("Я устал ждать... Увидимся позже.");
                     return;
                 }
 
                 response = await authManager.AuthorizeUser(msg.Message.Content);
 
-                if (response.status == System.Net.HttpStatusCode.BadRequest)
-                    await dm.SendMessageAsync($"Здається, ти надіслав неправильний код. Спробуй ще раз!\n\n{BotConfig.AuthURL}");
+                if (response.status == HttpStatusCode.BadRequest)
+                    await dm.SendMessageAsync($"Кажется, ты прислал неверный код. Попробуй ещё раз!\n\n{BotConfig.AuthURL}");
 
-            } while (response.status == System.Net.HttpStatusCode.BadRequest);
+            } while (response.status == HttpStatusCode.BadRequest);
 
 
             await db.InsertUser(
@@ -143,7 +136,7 @@ namespace ShikimoriDiscordBot.Commands {
                 refreshToken: response.refreshToken
             );
 
-            await dm.SendMessageAsync("Авторизація пройшла успішно!");
+            await dm.SendMessageAsync("Авторизация прошла успешно!");
         }
 
         [Command("user")]
@@ -151,20 +144,20 @@ namespace ShikimoriDiscordBot.Commands {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null) {
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
                 return;
             }
 
             var found = await api.SearchUser(nickname, user.AccessToken);
 
-            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
                 found = await api.SearchUser(nickname, user.AccessToken);
             }
 
-            if (found.StatusCode == System.Net.HttpStatusCode.NotFound) {
+            if (found.StatusCode == HttpStatusCode.NotFound) {
                 var notFoundEmbed = CommandsHelper.BuildNotFoundEmbed();
                 await ctx.RespondAsync(embed: notFoundEmbed);
                 return;
@@ -179,13 +172,13 @@ namespace ShikimoriDiscordBot.Commands {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null) {
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
                 return;
             }
 
             var found = await api.SearchUser(user.ShikimoriNickname, user.AccessToken);
 
-            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());

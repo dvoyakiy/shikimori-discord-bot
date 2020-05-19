@@ -81,10 +81,11 @@ namespace ShikimoriDiscordBot {
             var url = GetApiUrl(SearchTypes.User, nickname);
             var response = await Get($"{url}/{nickname}?is_nickname=1");
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            if (response.StatusCode != HttpStatusCode.OK) {
                 return new SearchResponse<UserInfo>() {
                     StatusCode = response.StatusCode
                 };
+            }
 
             string responseString = await response.Content.ReadAsStringAsync();
             var jsonResponse = JsonConvert.DeserializeObject<UserInfo>(responseString);

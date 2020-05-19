@@ -59,7 +59,7 @@ namespace ShikimoriDiscordBot.Commands {
                 mappedTitles.Add(idx + 1, found.Content[idx]);
 
             if (mappedTitles.Count == 0) {
-                var notFoundEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
+                var notFoundEmbed = CommandsHelper.BuildNotFoundEmbed();
                 await ctx.RespondAsync(embed: notFoundEmbed);
                 return;
             }
@@ -163,13 +163,36 @@ namespace ShikimoriDiscordBot.Commands {
                 found = await api.SearchUser(nickname, user.AccessToken);
             }
 
+            if (found.StatusCode == System.Net.HttpStatusCode.NotFound) {
+                var notFoundEmbed = CommandsHelper.BuildNotFoundEmbed();
+                await ctx.RespondAsync(embed: notFoundEmbed);
+                return;
+            }
+
             var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
-            ctx.RespondAsync(embed: embed);
+            await ctx.RespondAsync(embed: embed);
         }
 
         [Command("me")]
         public async Task Me(CommandContext ctx) {
+            var user = await db.GetUser(ctx.User.Id.ToString());
 
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                return;
+            }
+
+            var found = await api.SearchUser(user.Nickname, user.AccessToken);
+
+            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
+                found = await api.SearchUser(user.Nickname, user.AccessToken);
+            }
+
+            var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
+            await ctx.RespondAsync(embed: embed);
         }
     }
 }

@@ -72,13 +72,13 @@ namespace ShikimoriDiscordBot.Helpers {
             return "https://shikimori.org" + part;
         }
 
-        public static DiscordEmbedBuilder BuildTitleListEmbed(Dictionary<int, TitleInfo> mappedTitles) {
-            if (mappedTitles.Count == 0) {
-                return new DiscordEmbedBuilder {
-                    Title = "Ничего не найдено."
-                };
-            }
+        public static DiscordEmbedBuilder BuildNotFoundEmbed() {
+            return new DiscordEmbedBuilder {
+                Title = "Ничего не найдено."
+            };
+        }
 
+        public static DiscordEmbedBuilder BuildTitleListEmbed(Dictionary<int, TitleInfo> mappedTitles) {
             var embed = new DiscordEmbedBuilder {
                 Title = "Результаты поиска:"
             };
@@ -147,7 +147,7 @@ namespace ShikimoriDiscordBot.Helpers {
             var embed = new DiscordEmbedBuilder {
                 Title = userInfo.name != null ? $"{userInfo.nickname} ({userInfo.name})" : userInfo.nickname,
                 ThumbnailUrl = userInfo.image.x160,
-                Url = GetUrlTo(userInfo.nickname),
+                Url = GetUrlTo("/" + userInfo.nickname),
                 Description = userInfo.last_online,
             };
 

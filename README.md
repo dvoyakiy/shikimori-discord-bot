@@ -6,3 +6,4 @@
 - `!shiki user <nickname>` - search user by nickname
 - `!shiki search [anime | ranobe | manga] <title_name>` - search anime/ranobe/manga by its name
 - `!shiki me` - get info about current authorized user
+- `!shiki help` - get list of commands

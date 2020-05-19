@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ShikimoriDiscordBot.Json {
     [JsonObject(MemberSerialization.OptIn)]
-    public class Image {
+    public class TitleImage {
         [JsonProperty]
         public string original { get; set; }
         //[JsonProperty]
@@ -48,7 +48,7 @@ namespace ShikimoriDiscordBot.Json {
         [JsonProperty]
         public IList<string> japanese { get; set; }
         [JsonProperty]
-        public Image image { get; set; }
+        public TitleImage image { get; set; }
         [JsonProperty]
         public string url { get; set; }
         [JsonProperty]

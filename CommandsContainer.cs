@@ -1,21 +1,14 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using ShikimoriDiscordBot.Database;
-using ShikimoriDiscordBot.Database.Models;
 using ShikimoriDiscordBot.Config;
 using ShikimoriDiscordBot.Authorization;
 using ShikimoriDiscordBot.Helpers;
-using System.Net.Http;
-using Newtonsoft.Json;
-using System.Globalization;
-using ShikimoriDiscordBot;
-using DSharpPlus.EventArgs;
+using System.Net;
 using ShikimoriDiscordBot.Json;
 
 namespace ShikimoriDiscordBot.Commands {
@@ -32,20 +25,25 @@ namespace ShikimoriDiscordBot.Commands {
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
-            var user = await db.GetUser(ctx.User.Id.ToString());
-
-            if (user == null) {
-                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+            if (!CommandsHelper.TitleSearchTypes.Contains(type)) {
+                await ctx.RespondAsync("Неизвестный тип контента.\nОтправьте `!shiki help` чтобы посмотреть список комманд.");
                 return;
             }
 
-            var found = await api.SearchByQuery(type, title, user.AccessToken);
+            var user = await db.GetUser(ctx.User.Id.ToString());
 
-            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
+                return;
+            }
+
+            var found = await api.SearchTitleByQuery(type, title, user.AccessToken);
+
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
-                found = await api.SearchByQuery(type, title, user.AccessToken);
+                found = await api.SearchTitleByQuery(type, title, user.AccessToken);
             }
 
             Dictionary<int, TitleInfo> mappedTitles = new Dictionary<int, TitleInfo>();
@@ -53,11 +51,17 @@ namespace ShikimoriDiscordBot.Commands {
             for (int idx = 0; idx < found.Content.Count; idx++)
                 mappedTitles.Add(idx + 1, found.Content[idx]);
 
+            if (mappedTitles.Count == 0) {
+                var notFoundEmbed = CommandsHelper.BuildNotFoundEmbed();
+                await ctx.RespondAsync(embed: notFoundEmbed);
+                return;
+            }
+
             var resultsEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
             await ctx.RespondAsync(embed: resultsEmbed);
 
             var interactivity = ctx.Client.GetInteractivityModule();
-            int titleIndex;
+            int titleIndex = 0;
 
             do {
                 var choice = await interactivity.WaitForMessageAsync(m => m.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
@@ -67,7 +71,12 @@ namespace ShikimoriDiscordBot.Commands {
                     return;
                 }
 
-                titleIndex = Convert.ToInt32(choice.Message.Content);
+                try {
+                    titleIndex = Convert.ToInt32(choice.Message.Content);
+                } catch (FormatException) {
+                    continue;
+                }
+
 
                 if (titleIndex < 1 || titleIndex > BotConfig.SearchLimit)
                     continue;
@@ -75,7 +84,7 @@ namespace ShikimoriDiscordBot.Commands {
             } while (titleIndex < 1 || titleIndex > BotConfig.SearchLimit);
 
 
-            var response = await api.SearchById(type, mappedTitles[titleIndex].id);
+            var response = await api.SearchTitleById(type, mappedTitles[titleIndex].id);
             var embed = CommandsHelper.BuildTitleEmbed(response.Content, type);
 
             await ctx.RespondAsync(embed: embed);
@@ -89,7 +98,7 @@ namespace ShikimoriDiscordBot.Commands {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user != null) {
-                await ctx.RespondAsync($"Друже {ctx.Message.Author.Mention}, ти вже авторизований :3");
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}, ты уже авторизован :3");
                 return;
             }
 
@@ -106,27 +115,78 @@ namespace ShikimoriDiscordBot.Commands {
                 }, TimeSpan.FromMinutes(5));
 
                 if (msg == null) {
-                    await dm.SendMessageAsync("Я втомився чекати... Побачимось пізніше.");
+                    await dm.SendMessageAsync("Я устал ждать... Увидимся позже.");
                     return;
                 }
 
                 response = await authManager.AuthorizeUser(msg.Message.Content);
 
-                if (response.status == System.Net.HttpStatusCode.BadRequest)
-                    await dm.SendMessageAsync($"Здається, ти надіслав неправильний код. Спробуй ще раз!\n\n{BotConfig.AuthURL}");
+                if (response.status == HttpStatusCode.BadRequest)
+                    await dm.SendMessageAsync($"Кажется, ты прислал неверный код. Попробуй ещё раз!\n\n{BotConfig.AuthURL}");
 
-            } while (response.status == System.Net.HttpStatusCode.BadRequest);
+            } while (response.status == HttpStatusCode.BadRequest);
 
 
             await db.InsertUser(
                 nickname: ctx.Message.Author.Username,
                 clientId: ctx.User.Id.ToString(),
                 shikimoriUserId: response.userId,
+                shikimoriNickname: response.nickname,
                 accessToken: response.accessToken,
                 refreshToken: response.refreshToken
             );
 
-            await dm.SendMessageAsync("Авторизація пройшла успішно!");
+            await dm.SendMessageAsync("Авторизация прошла успешно!");
+        }
+
+        [Command("user")]
+        public async Task User(CommandContext ctx, string nickname) {
+            var user = await db.GetUser(ctx.User.Id.ToString());
+
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
+                return;
+            }
+
+            var found = await api.SearchUser(nickname, user.AccessToken);
+
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
+                found = await api.SearchUser(nickname, user.AccessToken);
+            }
+
+            if (found.StatusCode == HttpStatusCode.NotFound) {
+                var notFoundEmbed = CommandsHelper.BuildNotFoundEmbed();
+                await ctx.RespondAsync(embed: notFoundEmbed);
+                return;
+            }
+
+            var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
+            await ctx.RespondAsync(embed: embed);
+        }
+
+        [Command("me")]
+        public async Task Me(CommandContext ctx) {
+            var user = await db.GetUser(ctx.User.Id.ToString());
+
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля этого тебе нужно авторизоваться!\n\nОтправь команду `!shiki auth` и выполни полученные инструкции.");
+                return;
+            }
+
+            var found = await api.SearchUser(user.ShikimoriNickname, user.AccessToken);
+
+            if (found.StatusCode == HttpStatusCode.Unauthorized) {
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
+                found = await api.SearchUser(user.ShikimoriNickname, user.AccessToken);
+            }
+
+            var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
+            await ctx.RespondAsync(embed: embed);
         }
     }
 }

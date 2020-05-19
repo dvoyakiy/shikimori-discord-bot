@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using ShikimoriDiscordBot.Json;
 using System.Linq;
+using ShikimoriDiscordBot.Database.Models;
 
 namespace ShikimoriDiscordBot.Helpers {
     static class CommandsHelper {
+        public static readonly List<string> TitleSearchTypes = new List<string>() { "anime", "manga", "ranobe" };
+
         public static string BuildTitleName(string russian, string romaji, IList<string> japanese) {
             if (japanese == null || japanese[0] == null)
                 return $"{russian} ({romaji})";
@@ -40,11 +43,8 @@ namespace ShikimoriDiscordBot.Helpers {
             return string.Join(", ", genres);
         }
 
-        public static string GetUserStatus(UserRate userRate) {
-            if (userRate == null)
-                return "N/a";
-
-            switch(userRate.status) {
+        public static string GetUserStatus(string status) {
+            switch(status) {
                 case "planned":
                     return "Запланировано";
                 case "watching":
@@ -72,13 +72,19 @@ namespace ShikimoriDiscordBot.Helpers {
             return "https://shikimori.org" + part;
         }
 
+        public static DiscordEmbedBuilder BuildNotFoundEmbed() {
+            return new DiscordEmbedBuilder {
+                Title = "Ничего не найдено."
+            };
+        }
+
         public static DiscordEmbedBuilder BuildTitleListEmbed(Dictionary<int, TitleInfo> mappedTitles) {
             var embed = new DiscordEmbedBuilder {
                 Title = "Результаты поиска:"
             };
 
             foreach (KeyValuePair<int, TitleInfo> entry in mappedTitles)
-                embed.AddField($"`{entry.Key}.`", BuildTitleName(entry.Value.russian, entry.Value.name, null));
+                embed.AddField("\u200b", $"`{entry.Key}.` {BuildTitleName(entry.Value.russian, entry.Value.name, null)}");
 
             return embed;
         }
@@ -118,7 +124,48 @@ namespace ShikimoriDiscordBot.Helpers {
             if (titleInfo.studioOrPublisher != null)
                 embed.AddField(type == "anime" ? "Студия:" : "Издатель:", GetStudios(titleInfo.studioOrPublisher));
 
-            embed.AddField("В списке:", GetUserStatus(titleInfo.user_rate));
+            embed.AddField("В списке:", titleInfo.user_rate == null ? "N/a" : GetUserStatus(titleInfo.user_rate.status));
+
+            return embed;
+        }
+
+        private static string GetGenderString(string gender) {
+            return gender == "male" ? "мужчина" : "женщина";
+        }
+
+        private static string GetStatusesField(IList<TitleStatus> statuses) {
+            var sb = new StringBuilder();
+
+            foreach(var status in statuses) {
+                sb.AppendLine($"{GetUserStatus(status.name)}: {status.size}");
+            }
+
+            return sb.ToString();
+        }
+
+        public static DiscordEmbedBuilder BuildUserInfoEmbed(UserInfo userInfo) {
+            var embed = new DiscordEmbedBuilder {
+                Title = userInfo.name != null ? $"{userInfo.nickname} ({userInfo.name})" : userInfo.nickname,
+                ThumbnailUrl = userInfo.image.x160,
+                Url = GetUrlTo("/" + userInfo.nickname),
+                Description = userInfo.last_online,
+            };
+
+            if (userInfo.sex != null)
+                embed.AddField("Пол:", GetGenderString(userInfo.sex));
+
+            if (userInfo.full_years != null)
+                embed.AddField("Возраст:", $"{userInfo.full_years} лет");
+
+            if (userInfo.location != null)
+                embed.AddField("Откуда:", userInfo.location);
+
+            if (userInfo.website != null)
+                embed.AddField("Вебсайт:", userInfo.website);
+
+            embed.AddField("Статистика аниме: ", GetStatusesField(userInfo.stats.statuses.anime));
+            embed.AddField("Статистика манги и ранобэ: ", GetStatusesField(userInfo.stats.statuses.manga));
+
 
             return embed;
         }

@@ -78,7 +78,7 @@ namespace ShikimoriDiscordBot.Helpers {
             };
 
             foreach (KeyValuePair<int, TitleInfo> entry in mappedTitles)
-                embed.AddField($"`{entry.Key}.`", BuildTitleName(entry.Value.russian, entry.Value.name, null));
+                embed.AddField("\u200b", $"`{entry.Key}.` {BuildTitleName(entry.Value.russian, entry.Value.name, null)}");
 
             return embed;
         }

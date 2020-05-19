@@ -63,7 +63,7 @@ namespace ShikimoriDiscordBot.Commands {
             await ctx.RespondAsync(embed: resultsEmbed);
 
             var interactivity = ctx.Client.GetInteractivityModule();
-            int titleIndex;
+            int titleIndex = 0;
 
             do {
                 var choice = await interactivity.WaitForMessageAsync(m => m.Author.Id == ctx.User.Id, TimeSpan.FromMinutes(1));
@@ -73,7 +73,12 @@ namespace ShikimoriDiscordBot.Commands {
                     return;
                 }
 
-                titleIndex = Convert.ToInt32(choice.Message.Content);
+                try {
+                    titleIndex = Convert.ToInt32(choice.Message.Content);
+                } catch (FormatException) {
+                    continue;
+                }
+
 
                 if (titleIndex < 1 || titleIndex > BotConfig.SearchLimit)
                     continue;
@@ -133,6 +138,16 @@ namespace ShikimoriDiscordBot.Commands {
             );
 
             await dm.SendMessageAsync("Авторизація пройшла успішно!");
+        }
+
+        [Command("user")]
+        public async Task User(CommandContext ctx, string nickname) {
+
+        }
+
+        [Command("me")]
+        public async Task Me(CommandContext ctx) {
+
         }
     }
 }

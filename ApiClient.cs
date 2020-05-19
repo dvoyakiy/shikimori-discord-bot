@@ -21,22 +21,27 @@ namespace ShikimoriDiscordBot {
     class ApiClient {
         private readonly HttpClient httpClient;
 
+        private struct SearchTypes {
+            public static string Ranobe = "ranobe";
+            public static string User = "user";
+        }
+
         public ApiClient() {
             httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("User-Agent", "ShikimoriDiscordBot");
         }
 
-        private string GetApiUrl(string type) {
-            //if ((type == "characters") || (type == "people"))
-            //    return $"https://shikimori.org/api/{type}/search";
+        private string GetApiUrl(string type, string nickname = "") {
+            if (type == SearchTypes.User)
+                return $"https://shikimori.org/api/users";
 
-            if (type == "ranobe")
+            if (type == SearchTypes.Ranobe)
                 return $"https://shikimori.org/api/{type}";
 
             return $"https://shikimori.org/api/{type}s";
         }
 
-        public async Task<SearchResponse<List<TitleInfo>>> SearchByQuery(string type, string title, string accessToken) {
+        public async Task<SearchResponse<List<TitleInfo>>> SearchTitleByQuery(string type, string title, string accessToken) {
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             var url = GetApiUrl(type);
 
@@ -59,7 +64,7 @@ namespace ShikimoriDiscordBot {
             };
         }
 
-        public async Task<SearchResponse<TitleInfo>> SearchById(string type, int id) {
+        public async Task<SearchResponse<TitleInfo>> SearchTitleById(string type, int id) {
             var url = GetApiUrl(type);
             var response = await Get($"{url}/{id}");
 
@@ -72,20 +77,23 @@ namespace ShikimoriDiscordBot {
             };
         }
 
-        //public async Task<SearchResponse<List<TitleInfo>>> SearchTitle(string type, string title, string accessToken) {
-        //    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        public async Task<SearchResponse<UserInfo>> SearchUser(string nickname, string accessToken) {
+            var url = GetApiUrl(SearchTypes.User, nickname);
+            var response = await Get($"{url}/{nickname}?is_nickname=1");
 
-        //    var url = GetApiUrl(type);
-        //    SearchResponse<List<TitleInfo>> searchResponse = await SearchByQuery(url, title);
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                return new SearchResponse<UserInfo>() {
+                    StatusCode = response.StatusCode
+                };
 
-        //    if (searchResponse.StatusCode == HttpStatusCode.Unauthorized) {
-        //        return searchResponse;
-        //    }
-
-        //    searchResponse = await SearchById(url, searchResponse.Content.id.ToString());
-
-        //    return searchResponse;
-        //}
+            string responseString = await response.Content.ReadAsStringAsync();
+            var jsonResponse = JsonConvert.DeserializeObject<UserInfo>(responseString);
+            
+            return new SearchResponse<UserInfo>() {
+                Content = jsonResponse,
+                StatusCode = response.StatusCode
+            };
+        }
 
         public async Task<Tokens> RefreshCurrentToken(string refreshToken) {
             var response = await Post("https://shikimori.org/oauth/token", new Dictionary<string, string> {

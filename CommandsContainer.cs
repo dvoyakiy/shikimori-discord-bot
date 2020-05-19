@@ -22,7 +22,6 @@ namespace ShikimoriDiscordBot.Commands {
     public class CommandsContainer {
         private readonly DatabaseManager db;
         private readonly ApiClient api;
-        private readonly List<string> searchTypes = new List<string>() { "anime", "manga", "ranobe" };
 
         public CommandsContainer() {
             db = new DatabaseManager();
@@ -33,7 +32,7 @@ namespace ShikimoriDiscordBot.Commands {
 
         [Command("search")]
         public async Task Hi(CommandContext ctx, string type, string title) {
-            if (!searchTypes.Contains(type)) {
+            if (!CommandsHelper.TitleSearchTypes.Contains(type)) {
                 await ctx.RespondAsync("Неизвестный тип контента.\nОтправьте `!shiki help` чтобы посмотреть список комманд.");
                 return;
             }
@@ -45,19 +44,25 @@ namespace ShikimoriDiscordBot.Commands {
                 return;
             }
 
-            var found = await api.SearchByQuery(type, title, user.AccessToken);
+            var found = await api.SearchTitleByQuery(type, title, user.AccessToken);
 
             if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
-                found = await api.SearchByQuery(type, title, user.AccessToken);
+                found = await api.SearchTitleByQuery(type, title, user.AccessToken);
             }
 
             Dictionary<int, TitleInfo> mappedTitles = new Dictionary<int, TitleInfo>();
 
             for (int idx = 0; idx < found.Content.Count; idx++)
                 mappedTitles.Add(idx + 1, found.Content[idx]);
+
+            if (mappedTitles.Count == 0) {
+                var notFoundEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
+                await ctx.RespondAsync(embed: notFoundEmbed);
+                return;
+            }
 
             var resultsEmbed = CommandsHelper.BuildTitleListEmbed(mappedTitles);
             await ctx.RespondAsync(embed: resultsEmbed);
@@ -86,7 +91,7 @@ namespace ShikimoriDiscordBot.Commands {
             } while (titleIndex < 1 || titleIndex > BotConfig.SearchLimit);
 
 
-            var response = await api.SearchById(type, mappedTitles[titleIndex].id);
+            var response = await api.SearchTitleById(type, mappedTitles[titleIndex].id);
             var embed = CommandsHelper.BuildTitleEmbed(response.Content, type);
 
             await ctx.RespondAsync(embed: embed);
@@ -142,6 +147,24 @@ namespace ShikimoriDiscordBot.Commands {
 
         [Command("user")]
         public async Task User(CommandContext ctx, string nickname) {
+            var user = await db.GetUser(ctx.User.Id.ToString());
+
+            if (user == null) {
+                await ctx.RespondAsync($"{ctx.Message.Author.Mention}\nДля для цього потрібно авторизуватись!\n\nНадішли команду `!shiki auth` і виконай надіслані інструкції.");
+                return;
+            }
+
+            var found = await api.SearchUser(nickname, user.AccessToken);
+
+            if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
+                await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
+
+                user = await db.GetUser(ctx.User.Id.ToString());
+                found = await api.SearchUser(nickname, user.AccessToken);
+            }
+
+
+
 
         }
 

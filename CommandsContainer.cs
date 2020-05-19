@@ -23,8 +23,8 @@ namespace ShikimoriDiscordBot.Commands {
             api = new ApiClient();
         }
 
-        [Command("search")]
-        public async Task Hi(CommandContext ctx, string type, string title) {
+        [Command("search"), Description("Поиск контента по названию (аниме, манга, ранобэ)\n\n`!shiki search <type> <title>`")]
+        public async Task Hi(CommandContext ctx, [Description("Тип искомого контента (anime / ranobe / manga)")] string type, [Description("Название искомого контента")] string title) {
             if (!CommandsHelper.TitleSearchTypes.Contains(type)) {
                 await ctx.RespondAsync("Неизвестный тип контента.\nОтправьте `!shiki help` чтобы посмотреть список комманд.");
                 return;
@@ -90,7 +90,7 @@ namespace ShikimoriDiscordBot.Commands {
             await ctx.RespondAsync(embed: embed);
         }
 
-        [Command("auth")]
+        [Command("auth"), Description("Авторизация внутри бота\n\n`!shiki auth`")]
         public async Task Auth(CommandContext ctx) {
             if (ctx.Message.Channel.IsPrivate)
                 return;
@@ -139,8 +139,8 @@ namespace ShikimoriDiscordBot.Commands {
             await dm.SendMessageAsync("Авторизация прошла успешно!");
         }
 
-        [Command("user")]
-        public async Task User(CommandContext ctx, string nickname) {
+        [Command("user"), Description("Поиск пользователя по никнейму\n\n`!shiki user <nickname>`")]
+        public async Task User(CommandContext ctx, [Description("Никнейм пользователя")] string nickname) {
             var user = await db.GetUser(ctx.User.Id.ToString());
 
             if (user == null) {
@@ -167,7 +167,7 @@ namespace ShikimoriDiscordBot.Commands {
             await ctx.RespondAsync(embed: embed);
         }
 
-        [Command("me")]
+        [Command("me"), Description("Информация о текущем пользователе (о тебе :3)\n\n`!shiki me`")]
         public async Task Me(CommandContext ctx) {
             var user = await db.GetUser(ctx.User.Id.ToString());
 

@@ -163,9 +163,8 @@ namespace ShikimoriDiscordBot.Commands {
                 found = await api.SearchUser(nickname, user.AccessToken);
             }
 
-
-
-
+            var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
+            ctx.RespondAsync(embed: embed);
         }
 
         [Command("me")]

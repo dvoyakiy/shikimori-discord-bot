@@ -41,33 +41,10 @@ namespace ShikimoriDiscordBot.Json {
     }
 
     [JsonObject(MemberSerialization.OptIn)]
-    public class TitleType {
-
-        [JsonProperty("name")]
-        public string name { get; set; }
-
-        [JsonProperty("value")]
-        public int value { get; set; }
-    }
-
-    [JsonObject(MemberSerialization.OptIn)]
-    public class Types {
-
-        [JsonProperty("anime")]
-        public IList<TitleType> anime { get; set; }
-
-        [JsonProperty("manga")]
-        public IList<TitleType> manga { get; set; }
-    }
-
-    [JsonObject(MemberSerialization.OptIn)]
     public class Stats {
 
         [JsonProperty("statuses")]
         public Statuses statuses { get; set; }
-
-        [JsonProperty("types")]
-        public Types types { get; set; }
     }
 
     [JsonObject(MemberSerialization.OptIn)]

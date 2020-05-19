@@ -9,6 +9,8 @@ using System.Linq;
 
 namespace ShikimoriDiscordBot.Helpers {
     static class CommandsHelper {
+        public static readonly List<string> TitleSearchTypes = new List<string>() { "anime", "manga", "ranobe" };
+
         public static string BuildTitleName(string russian, string romaji, IList<string> japanese) {
             if (japanese == null || japanese[0] == null)
                 return $"{russian} ({romaji})";
@@ -73,6 +75,13 @@ namespace ShikimoriDiscordBot.Helpers {
         }
 
         public static DiscordEmbedBuilder BuildTitleListEmbed(Dictionary<int, TitleInfo> mappedTitles) {
+            if (mappedTitles.Count == 0) {
+                return new DiscordEmbedBuilder {
+                    Title = "Ничего не найдено."
+                };
+            }
+                
+
             var embed = new DiscordEmbedBuilder {
                 Title = "Результаты поиска:"
             };

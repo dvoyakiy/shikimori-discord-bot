@@ -15,6 +15,7 @@ namespace ShikimoriDiscordBot.Authorization {
         public long userId { get; set; }
         public string accessToken { get; set; }
         public string refreshToken { get; set; }
+        public string nickname { get; set; }
 
         public HttpStatusCode status { get; set; }
     }
@@ -29,6 +30,9 @@ namespace ShikimoriDiscordBot.Authorization {
 
         [JsonProperty]
         public string refresh_token { get; set; }
+
+        [JsonProperty]
+        public string nickname { get; set; }
     }
 
     class AuthorizationManager {
@@ -62,6 +66,7 @@ namespace ShikimoriDiscordBot.Authorization {
                 jsonResponse = JsonConvert.DeserializeObject<JsonResponse>(responseString);
 
                 shikimoriResponse.userId = jsonResponse.id;
+                shikimoriResponse.nickname = jsonResponse.nickname;
             }
 
             return shikimoriResponse;

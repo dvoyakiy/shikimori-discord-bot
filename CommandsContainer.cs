@@ -138,6 +138,7 @@ namespace ShikimoriDiscordBot.Commands {
                 nickname: ctx.Message.Author.Username,
                 clientId: ctx.User.Id.ToString(),
                 shikimoriUserId: response.userId,
+                shikimoriNickname: response.nickname,
                 accessToken: response.accessToken,
                 refreshToken: response.refreshToken
             );
@@ -182,13 +183,13 @@ namespace ShikimoriDiscordBot.Commands {
                 return;
             }
 
-            var found = await api.SearchUser(user.Nickname, user.AccessToken);
+            var found = await api.SearchUser(user.ShikimoriNickname, user.AccessToken);
 
             if (found.StatusCode == System.Net.HttpStatusCode.Unauthorized) {
                 await CommandsHelper.UpdateTokens(user.ClientId, user.RefreshToken, db);
 
                 user = await db.GetUser(ctx.User.Id.ToString());
-                found = await api.SearchUser(user.Nickname, user.AccessToken);
+                found = await api.SearchUser(user.ShikimoriNickname, user.AccessToken);
             }
 
             var embed = CommandsHelper.BuildUserInfoEmbed(found.Content);
